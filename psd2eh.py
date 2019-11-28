@@ -18,21 +18,18 @@ key_name = 'RootManageSharedAccessKey'
 key_value = 'uoDYiA/o3Jjtp2Wb4f3HZnclv73VneyPigcZ0jwGMEU='
 service_namespace = 'joksdrpsd'
 evhub = 'sdr1'
-
+sbs=ServiceBusService(service_namespace,shared_access_key_name=key_name,shared_access_key_value=key_value)
 x = 1024 # FFT bins
 i = 256  # Passes
 
-samples = sdr.read_samples(i*x)
-sdr.close()
+while(True):
+	samples = sdr.read_samples(i*x)
+	sdr.close()
+	power,freq = psd(samples, NFFT=x, Fs=sdr.sample_rate/1e6)
+	
+	for i in range(len(freq)):
+		msg = '{"psd": "' + str(freq[i]) + ',' + str(power[i]) + '"}'
+		sbs.send_event(evhub,msg)
 
-power,freq = psd(samples, NFFT=x, Fs=sdr.sample_rate/1e6)
-#spectra,fbins = signal.welch(samples,sdr.sample_rate/1e6,nfft=x)
-
-sbs=ServiceBusService(service_namespace,shared_access_key_name=key_name,shared_access_key_value=key_value)
-#if(sbs.create_event_hub(evhub)):
-for i in range(len(freq)):
-	msg = '{"psd": "' + str(freq[i]) + ',' + str(power[i]) + '"}'
-	sbs.send_event(evhub,msg)
-	print(msg)
 
 
